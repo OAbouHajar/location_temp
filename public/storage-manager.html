@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Storage Manager - Real Estate Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .storage-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .storage-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .storage-key {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .storage-size {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .storage-value {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            font-family: 'Courier New', monospace;
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💾 Local Storage Manager</h1>
+            <p class="subtitle">Easy data management for your web app</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="card">
+            <h2>📊 Storage Statistics</h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalKeys">0</div>
+                    <div class="stat-label">Total Keys</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalSize">0 KB</div>
+                    <div class="stat-label">Total Size</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="availableSpace">~5 MB</div>
+                    <div class="stat-label">Available Space</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>➕ Add New Data</h2>
+            <div class="controls">
+                <button onclick="showAddModal()">➕ Add New Key</button>
+                <button class="success" onclick="addSampleData()">📝 Add Sample Data</button>
+                <button class="secondary" onclick="importJSON()">📥 Import JSON</button>
+                <button class="secondary" onclick="exportAllJSON()">📤 Export All</button>
+                <button class="danger" onclick="clearAllStorage()">🗑️ Clear All Storage</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🗄️ Stored Data</h2>
+            <div id="storageItems"></div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Data</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="editForm" onsubmit="saveData(event)">
+                <div class="form-group">
+                    <label>Key Name:</label>
+                    <input type="text" id="keyInput" required placeholder="e.g., myData, userSettings">
+                </div>
+                <div class="form-group">
+                    <label>Value (JSON or Text):</label>
+                    <textarea id="valueInput" required placeholder='{"name": "John", "age": 30} or plain text'></textarea>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="success">💾 Save</button>
+                    <button type="button" class="secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+
+    <script>
+        let editingKey = null;
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function calculateSize(str) {
+            return new Blob([str]).size;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function updateStats() {
+            const keys = Object.keys(localStorage);
+            let totalSize = 0;
+
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                totalSize += calculateSize(key) + calculateSize(value);
+            });
+
+            document.getElementById('totalKeys').textContent = keys.length;
+            document.getElementById('totalSize').textContent = formatBytes(totalSize);
+        }
+
+        function displayStorageItems() {
+            const container = document.getElementById('storageItems');
+            const keys = Object.keys(localStorage).sort();
+
+            if (keys.length === 0) {
+                container.innerHTML = '<div class="no-data">No data in local storage. Add some data to get started!</div>';
+                return;
+            }
+
+            let html = '';
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                const size = calculateSize(key) + calculateSize(value);
+                
+                // Try to format as JSON
+                let displayValue;
+                try {
+                    const parsed = JSON.parse(value);
+                    displayValue = JSON.stringify(parsed, null, 2);
+                } catch {
+                    displayValue = value;
+                }
+
+                html += `
+                    <div class="storage-item">
+                        <div class="storage-item-header">
+                            <span class="storage-key">🔑 ${key}</span>
+                            <span class="storage-size">${formatBytes(size)}</span>
+                        </div>
+                        <div class="storage-value">${displayValue}</div>
+                        <div class="btn-group">
+                            <button onclick="editItem('${key}')">✏️ Edit</button>
+                            <button onclick="copyItem('${key}')">📋 Copy</button>
+                            <button onclick="downloadItem('${key}')">📥 Download</button>
+                            <button class="danger" onclick="deleteItem('${key}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function showAddModal() {
+            editingKey = null;
+            document.getElementById('modalTitle').textContent = 'Add New Data';
+            document.getElementById('keyInput').value = '';
+            document.getElementById('valueInput').value = '';
+            document.getElementById('keyInput').disabled = false;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function editItem(key) {
+            editingKey = key;
+            document.getElementById('modalTitle').textContent = 'Edit Data';
+            document.getElementById('keyInput').value = key;
+            document.getElementById('keyInput').disabled = true;
+            
+            const value = localStorage.getItem(key);
+            try {
+                const parsed = JSON.parse(value);
+                document.getElementById('valueInput').value = JSON.stringify(parsed, null, 2);
+            } catch {
+                document.getElementById('valueInput').value = value;
+            }
+            
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingKey = null;
+        }
+
+        function saveData(event) {
+            event.preventDefault();
+            
+            const key = document.getElementById('keyInput').value.trim();
+            const value = document.getElementById('valueInput').value.trim();
+
+            if (!key || !value) {
+                showAlert('Key and value are required!', 'error');
+                return;
+            }
+
+            try {
+                localStorage.setItem(key, value);
+                showAlert(`Data saved successfully: ${key}`, 'success');
+                closeModal();
+                updateStats();
+                displayStorageItems();
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    showAlert('Storage quota exceeded! Please delete some data.', 'error');
+                } else {
+                    showAlert('Error saving data: ' + e.message, 'error');
+                }
+            }
+        }
+
+        function deleteItem(key) {
+            if (confirm(`Are you sure you want to delete "${key}"?`)) {
+                localStorage.removeItem(key);
+                showAlert(`Deleted: ${key}`, 'success');
+                updateStats();
+                displayStorageItems();
+            }
+        }
+
+        function copyItem(key) {
+            const value = localStorage.getItem(key);
+            navigator.clipboard.writeText(value).then(() => {
+                showAlert(`Copied ${key} to clipboard!`, 'success');
+            }).catch(() => {
+                showAlert('Failed to copy to clipboard', 'error');
+            });
+        }
+
+        function downloadItem(key) {
+            const value = localStorage.getItem(key);
+            const blob = new Blob([value], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${key}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert(`Downloaded: ${key}.json`, 'success');
+        }
+
+        function addSampleData() {
+            const samples = [
+                {
+                    key: 'userProfile',
+                    value: JSON.stringify({
+                        name: 'John Doe',
+                        email: 'john@example.com',
+                        role: 'admin',
+                        preferences: {
+                            theme: 'dark',
+                            notifications: true
+                        }
+                    }, null, 2)
+                },
+                {
+                    key: 'appSettings',
+                    value: JSON.stringify({
+                        language: 'en',
+                        currency: 'USD',
+                        timezone: 'UTC',
+                        autoSave: true
+                    }, null, 2)
+                },
+                {
+                    key: 'todoList',
+                    value: JSON.stringify([
+                        { id: 1, task: 'Complete project', done: false },
+                        { id: 2, task: 'Review code', done: true },
+                        { id: 3, task: 'Deploy application', done: false }
+                    ], null, 2)
+                }
+            ];
+
+            samples.forEach(sample => {
+                try {
+                    localStorage.setItem(sample.key, sample.value);
+                } catch (e) {
+                    console.error('Failed to add sample:', sample.key);
+                }
+            });
+
+            showAlert('Sample data added successfully!', 'success');
+            updateStats();
+            displayStorageItems();
+        }
+
+        function clearAllStorage() {
+            if (confirm('⚠️ Are you sure you want to clear ALL local storage? This cannot be undone!')) {
+                const confirmed = prompt('Type "DELETE" to confirm:');
+                if (confirmed === 'DELETE') {
+                    localStorage.clear();
+                    showAlert('All storage cleared!', 'success');
+                    updateStats();
+                    displayStorageItems();
+                }
+            }
+        }
+
+        function importJSON() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (typeof data === 'object' && !Array.isArray(data)) {
+                        Object.keys(data).forEach(key => {
+                            localStorage.setItem(key, typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]));
+                        });
+                        showAlert(`Imported ${Object.keys(data).length} items!`, 'success');
+                    } else {
+                        showAlert('JSON must be an object with key-value pairs', 'error');
+                    }
+                    
+                    updateStats();
+                    displayStorageItems();
+                } catch (err) {
+                    showAlert('Invalid JSON file: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function exportAllJSON() {
+            const data = {};
+            Object.keys(localStorage).forEach(key => {
+                try {
+                    data[key] = JSON.parse(localStorage.getItem(key));
+                } catch {
+                    data[key] = localStorage.getItem(key);
+                }
+            });
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `localStorage-export-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert('Exported all data!', 'success');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Initialize
+        updateStats();
+        displayStorageItems();
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            updateStats();
+            displayStorageItems();
+        }, 5000);
+    </script>
+</body>
+</html>

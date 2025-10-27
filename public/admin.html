@@ -235,6 +235,172 @@
             border: 1px solid #bee5eb;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-view {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .detail-group {
+            margin-bottom: 20px;
+        }
+
+        .detail-group h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .detail-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+            display: inline-block;
+            width: 180px;
+        }
+
+        .detail-value {
+            color: #2c3e50;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         @media (max-width: 768px) {
             .stat-value {
                 font-size: 2rem;
@@ -246,6 +412,22 @@
 
             button {
                 width: 100%;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 20px;
+            }
+
+            .detail-label {
+                width: 100%;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -282,8 +464,40 @@
             <button onclick="loadAllData()">🔄 Refresh Data</button>
             <button onclick="exportJSON()">📥 Export JSON</button>
             <button onclick="exportCSV()">📊 Export CSV</button>
-            <button class="success" onclick="filterByLocation()">📍 Filter with GPS</button>
+            <button class="success" onclick="toggleFilters()">🔍 Toggle Filters</button>
             <button class="danger" onclick="clearLocalData()">🗑️ Clear Local Data</button>
+        </div>
+
+        <div class="filters" id="filtersPanel" style="display: none;">
+            <h3>🔍 Filter Data</h3>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>From Date:</label>
+                    <input type="date" id="filterFromDate">
+                </div>
+                <div class="filter-group">
+                    <label>To Date:</label>
+                    <input type="date" id="filterToDate">
+                </div>
+                <div class="filter-group">
+                    <label>Has GPS:</label>
+                    <select id="filterGPS">
+                        <option value="all">All</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Platform:</label>
+                    <select id="filterPlatform">
+                        <option value="all">All</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button onclick="applyFilters()" style="margin-right: 10px;">Apply Filters</button>
+                <button onclick="clearFilters()" class="danger">Clear Filters</button>
+            </div>
         </div>
 
         <div class="data-section">
@@ -307,9 +521,22 @@
         </div>
     </div>
 
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Session Details</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
     <script>
         let sessionsData = [];
         let interactionsData = [];
+        let allSessionsData = []; // Keep original unfiltered data
+        let allInteractionsData = [];
 
         function showAlert(message, type = 'info') {
             const alertContainer = document.getElementById('alertContainer');
@@ -335,20 +562,25 @@
 
                 if (sessionsRes && sessionsRes.ok) {
                     const data = await sessionsRes.json();
-                    sessionsData = data.sessions || [];
+                    allSessionsData = data.sessions || [];
                 } else {
                     // Fallback to localStorage if API not available
                     showAlert('Azure Functions API not available, using local storage', 'info');
-                    sessionsData = JSON.parse(localStorage.getItem('collectedSessions') || '[]');
+                    allSessionsData = JSON.parse(localStorage.getItem('collectedSessions') || '[]');
                 }
 
                 if (interactionsRes && interactionsRes.ok) {
                     const data = await interactionsRes.json();
-                    interactionsData = data.interactions || [];
+                    allInteractionsData = data.interactions || [];
                 } else {
-                    interactionsData = JSON.parse(localStorage.getItem('collectedInteractions') || '[]');
+                    allInteractionsData = JSON.parse(localStorage.getItem('collectedInteractions') || '[]');
                 }
 
+                // Copy to working data
+                sessionsData = [...allSessionsData];
+                interactionsData = [...allInteractionsData];
+
+                populateFilterOptions();
                 updateStats();
                 displaySessions();
                 displayInteractions();
@@ -358,12 +590,71 @@
                 showAlert('Error loading data. Using local storage.', 'error');
                 
                 // Fallback to localStorage
-                sessionsData = JSON.parse(localStorage.getItem('collectedSessions') || '[]');
-                interactionsData = JSON.parse(localStorage.getItem('collectedInteractions') || '[]');
+                allSessionsData = JSON.parse(localStorage.getItem('collectedSessions') || '[]');
+                allInteractionsData = JSON.parse(localStorage.getItem('collectedInteractions') || '[]');
+                sessionsData = [...allSessionsData];
+                interactionsData = [...allInteractionsData];
+                populateFilterOptions();
                 updateStats();
                 displaySessions();
                 displayInteractions();
             }
+        }
+
+        function populateFilterOptions() {
+            // Populate platform filter
+            const platforms = [...new Set(allSessionsData.map(s => s.device?.platform).filter(Boolean))];
+            const platformSelect = document.getElementById('filterPlatform');
+            platformSelect.innerHTML = '<option value="all">All</option>';
+            platforms.forEach(platform => {
+                platformSelect.innerHTML += `<option value="${platform}">${platform}</option>`;
+            });
+        }
+
+        function toggleFilters() {
+            const panel = document.getElementById('filtersPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function applyFilters() {
+            const fromDate = document.getElementById('filterFromDate').value;
+            const toDate = document.getElementById('filterToDate').value;
+            const gpsFilter = document.getElementById('filterGPS').value;
+            const platformFilter = document.getElementById('filterPlatform').value;
+
+            sessionsData = allSessionsData.filter(session => {
+                // Date filter
+                if (fromDate && new Date(session.timestamp) < new Date(fromDate)) return false;
+                if (toDate && new Date(session.timestamp) > new Date(toDate + 'T23:59:59')) return false;
+                
+                // GPS filter
+                if (gpsFilter === 'yes' && (!session.gps || !session.gps.latitude)) return false;
+                if (gpsFilter === 'no' && session.gps && session.gps.latitude) return false;
+                
+                // Platform filter
+                if (platformFilter !== 'all' && session.device?.platform !== platformFilter) return false;
+                
+                return true;
+            });
+
+            updateStats();
+            displaySessions();
+            showAlert(`Showing ${sessionsData.length} of ${allSessionsData.length} sessions`, 'success');
+        }
+
+        function clearFilters() {
+            document.getElementById('filterFromDate').value = '';
+            document.getElementById('filterToDate').value = '';
+            document.getElementById('filterGPS').value = 'all';
+            document.getElementById('filterPlatform').value = 'all';
+            
+            sessionsData = [...allSessionsData];
+            interactionsData = [...allInteractionsData];
+            
+            updateStats();
+            displaySessions();
+            displayInteractions();
+            showAlert('Filters cleared', 'success');
         }
 
         function updateStats() {
@@ -396,9 +687,10 @@
             html += '<th>Location (GPS)</th>';
             html += '<th>Device</th>';
             html += '<th>Browser</th>';
+            html += '<th>Actions</th>';
             html += '</tr></thead><tbody>';
 
-            sessionsData.forEach(session => {
+            sessionsData.forEach((session, index) => {
                 const gps = session.gps || {};
                 const device = session.device || {};
                 
@@ -409,6 +701,10 @@
                 html += `<td>${gps.latitude ? `${gps.latitude.toFixed(4)}, ${gps.longitude.toFixed(4)}` : 'No GPS'}</td>`;
                 html += `<td>${device.platform || 'N/A'}</td>`;
                 html += `<td>${device.userAgent?.split(' ')[0] || 'N/A'}</td>`;
+                html += `<td class="action-buttons">
+                    <button class="btn-small btn-view" onclick='viewSessionDetails(${JSON.stringify(session).replace(/'/g, "&#39;")})'>👁️ View</button>
+                    <button class="btn-small btn-delete" onclick="deleteSession('${session.sessionId}')">🗑️</button>
+                </td>`;
                 html += '</tr>';
             });
 
@@ -497,29 +793,110 @@
             showAlert('CSV exported successfully!', 'success');
         }
 
-        function filterByLocation() {
-            const withGPS = sessionsData.filter(s => s.gps && s.gps.latitude);
-            if (withGPS.length === 0) {
-                showAlert('No sessions with GPS data found', 'error');
-                return;
+        function viewSessionDetails(session) {
+            const modal = document.getElementById('detailModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            let html = '';
+            
+            // Basic Info
+            html += '<div class="detail-group">';
+            html += '<h3>📋 Session Information</h3>';
+            html += `<div class="detail-item"><span class="detail-label">Session ID:</span><span class="detail-value">${session.sessionId}</span></div>`;
+            html += `<div class="detail-item"><span class="detail-label">Timestamp:</span><span class="detail-value">${new Date(session.timestamp).toLocaleString()}</span></div>`;
+            html += `<div class="detail-item"><span class="detail-label">Client IP:</span><span class="detail-value">${session.clientIP || 'N/A'}</span></div>`;
+            html += '</div>';
+            
+            // GPS Data
+            if (session.gps && session.gps.latitude) {
+                html += '<div class="detail-group">';
+                html += '<h3>📍 GPS Location</h3>';
+                html += `<div class="detail-item"><span class="detail-label">Latitude:</span><span class="detail-value">${session.gps.latitude}</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">Longitude:</span><span class="detail-value">${session.gps.longitude}</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">Accuracy:</span><span class="detail-value">${session.gps.accuracy}m</span></div>`;
+                if (session.gps.altitude) html += `<div class="detail-item"><span class="detail-label">Altitude:</span><span class="detail-value">${session.gps.altitude}m</span></div>`;
+                html += '</div>';
             }
             
-            sessionsData = withGPS;
-            displaySessions();
+            // Device Info
+            if (session.device) {
+                html += '<div class="detail-group">';
+                html += '<h3>💻 Device Information</h3>';
+                html += `<div class="detail-item"><span class="detail-label">Platform:</span><span class="detail-value">${session.device.platform || 'N/A'}</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">User Agent:</span><span class="detail-value">${session.device.userAgent || 'N/A'}</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">Language:</span><span class="detail-value">${session.device.language || 'N/A'}</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">Hardware Cores:</span><span class="detail-value">${session.device.hardwareConcurrency || 'N/A'}</span></div>`;
+                html += '</div>';
+            }
+            
+            // Screen Info
+            if (session.screen) {
+                html += '<div class="detail-group">';
+                html += '<h3>🖥️ Screen Information</h3>';
+                html += `<div class="detail-item"><span class="detail-label">Resolution:</span><span class="detail-value">${session.screen.screenWidth}x${session.screen.screenHeight}</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">Color Depth:</span><span class="detail-value">${session.screen.colorDepth} bits</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">Pixel Ratio:</span><span class="detail-value">${session.screen.devicePixelRatio}</span></div>`;
+                html += '</div>';
+            }
+            
+            // Timezone
+            if (session.timezone) {
+                html += '<div class="detail-group">';
+                html += '<h3>🌍 Timezone</h3>';
+                html += `<div class="detail-item"><span class="detail-label">Timezone:</span><span class="detail-value">${session.timezone.timezone || 'N/A'}</span></div>`;
+                html += `<div class="detail-item"><span class="detail-label">Locale:</span><span class="detail-value">${session.timezone.locale || 'N/A'}</span></div>`;
+                html += '</div>';
+            }
+            
+            // Raw JSON
+            html += '<div class="detail-group">';
+            html += '<h3>📄 Raw JSON Data</h3>';
+            html += `<div class="json-view">${JSON.stringify(session, null, 2)}</div>`;
+            html += '</div>';
+            
+            modalBody.innerHTML = html;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        function deleteSession(sessionId) {
+            if (!confirm('Are you sure you want to delete this session?')) return;
+            
+            // Remove from all data arrays
+            allSessionsData = allSessionsData.filter(s => s.sessionId !== sessionId);
+            sessionsData = sessionsData.filter(s => s.sessionId !== sessionId);
+            
+            // Update localStorage
+            localStorage.setItem('collectedSessions', JSON.stringify(allSessionsData));
+            
             updateStats();
-            showAlert(`Filtered to ${withGPS.length} sessions with GPS data`, 'success');
+            displaySessions();
+            showAlert('Session deleted successfully', 'success');
         }
 
         function clearLocalData() {
             if (confirm('Are you sure you want to clear LOCAL data? This will not affect server data.')) {
                 localStorage.removeItem('collectedSessions');
                 localStorage.removeItem('collectedInteractions');
+                allSessionsData = [];
+                allInteractionsData = [];
                 sessionsData = [];
                 interactionsData = [];
                 updateStats();
                 displaySessions();
                 displayInteractions();
                 showAlert('Local data cleared', 'success');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('detailModal');
+            if (event.target === modal) {
+                closeModal();
             }
         }
 
