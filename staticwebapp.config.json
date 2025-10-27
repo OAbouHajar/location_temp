@@ -5,13 +5,17 @@
       "rewrite": "/admin.html"
     },
     {
+      "route": "/location-dashboard",
+      "rewrite": "/location-dashboard.html"
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/admin.html", "/admin"]
+    "exclude": ["/admin.html", "/admin", "/location-dashboard.html", "/location-dashboard"]
   },
   "mimeTypes": {
     ".json": "application/json",
@@ -21,6 +25,7 @@
   },
   "globalHeaders": {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
   }
 }

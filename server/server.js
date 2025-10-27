@@ -3,40 +3,28 @@ const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
+const SQLiteStorage = require('./database/sqlite-storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize SQLite storage
+const storage = new SQLiteStorage();
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Storage file paths
+// Storage directory for SQLite database
 const DATA_DIR = path.join(__dirname, 'storage');
-const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
-const INTERACTIONS_FILE = path.join(DATA_DIR, 'interactions.json');
 
 // Initialize storage
 async function initStorage() {
     try {
         await fs.mkdir(DATA_DIR, { recursive: true });
-        
-        // Create sessions file if it doesn't exist
-        try {
-            await fs.access(SESSIONS_FILE);
-        } catch {
-            await fs.writeFile(SESSIONS_FILE, JSON.stringify([], null, 2));
-        }
-
-        // Create interactions file if it doesn't exist
-        try {
-            await fs.access(INTERACTIONS_FILE);
-        } catch {
-            await fs.writeFile(INTERACTIONS_FILE, JSON.stringify([], null, 2));
-        }
-
-        console.log('Storage initialized');
+        console.log('✅ Storage directory initialized');
+        console.log('✅ SQLite database ready for location tracking');
     } catch (error) {
         console.error('Error initializing storage:', error);
     }
@@ -61,7 +49,8 @@ app.post('/api/collect', async (req, res) => {
     try {
         const clientIP = req.headers['x-forwarded-for'] || 
                          req.connection.remoteAddress || 
-                         req.socket.remoteAddress;
+                         req.socket.remoteAddress ||
+                         '127.0.0.1';
 
         // Get IP-based geolocation
         const ipGeo = await getIPGeolocation(clientIP);
@@ -79,26 +68,33 @@ app.post('/api/collect', async (req, res) => {
             }
         };
 
-        // Read existing sessions
-        const sessionsData = await fs.readFile(SESSIONS_FILE, 'utf8');
-        const sessions = JSON.parse(sessionsData);
+        // Store in SQLite database
+        await storage.insertSession(sessionData);
+        
+        // Store GPS location if available
+        if (sessionData.gps && !sessionData.gps.error) {
+            await storage.insertGPSLocation(sessionData.sessionId, sessionData.gps);
+            console.log(`📍 GPS Location stored: ${sessionData.gps.latitude}, ${sessionData.gps.longitude}`);
+        }
+        
+        // Store IP geolocation if available
+        if (ipGeo && ipGeo.status === 'success') {
+            await storage.insertIPGeolocation(sessionData.sessionId, ipGeo);
+            console.log(`🌍 IP Location: ${ipGeo.city}, ${ipGeo.country}`);
+        }
 
-        // Add new session
-        sessions.push(sessionData);
-
-        // Save to file
-        await fs.writeFile(SESSIONS_FILE, JSON.stringify(sessions, null, 2));
-
-        console.log(`Data collected for session: ${req.body.sessionId}`);
-        console.log(`IP: ${clientIP}, Location: ${ipGeo?.city}, ${ipGeo?.country}`);
+        console.log(`✅ Data collected for session: ${req.body.sessionId}`);
+        console.log(`🔗 IP: ${clientIP}`);
 
         res.json({ 
             success: true, 
             message: 'Data collected successfully',
-            sessionId: req.body.sessionId
+            sessionId: req.body.sessionId,
+            hasGPS: sessionData.gps && !sessionData.gps.error,
+            hasIPLocation: ipGeo && ipGeo.status === 'success'
         });
     } catch (error) {
-        console.error('Error collecting data:', error);
+        console.error('❌ Error collecting data:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Failed to collect data' 
@@ -114,19 +110,13 @@ app.post('/api/interaction', async (req, res) => {
             serverTimestamp: new Date().toISOString()
         };
 
-        // Read existing interactions
-        const interactionsData = await fs.readFile(INTERACTIONS_FILE, 'utf8');
-        const interactions = JSON.parse(interactionsData);
+        // Store interaction in SQLite
+        await storage.insertInteraction(interactionData);
 
-        // Add new interaction
-        interactions.push(interactionData);
-
-        // Save to file
-        await fs.writeFile(INTERACTIONS_FILE, JSON.stringify(interactions, null, 2));
-
+        console.log(`📝 Interaction tracked: ${interactionData.type}`);
         res.json({ success: true });
     } catch (error) {
-        console.error('Error tracking interaction:', error);
+        console.error('❌ Error tracking interaction:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Failed to track interaction' 
@@ -137,10 +127,10 @@ app.post('/api/interaction', async (req, res) => {
 // Session end
 app.post('/api/session-end', async (req, res) => {
     try {
-        console.log(`Session ended: ${req.body.sessionId}`);
+        console.log(`🔚 Session ended: ${req.body.sessionId}`);
         res.json({ success: true });
     } catch (error) {
-        console.error('Error ending session:', error);
+        console.error('❌ Error ending session:', error);
         res.status(500).json({ success: false });
     }
 });
@@ -148,15 +138,14 @@ app.post('/api/session-end', async (req, res) => {
 // View collected data (for admin/debugging)
 app.get('/api/admin/sessions', async (req, res) => {
     try {
-        const sessionsData = await fs.readFile(SESSIONS_FILE, 'utf8');
-        const sessions = JSON.parse(sessionsData);
+        const sessions = await storage.getAllSessions();
         
         res.json({
             total: sessions.length,
             sessions: sessions
         });
     } catch (error) {
-        console.error('Error reading sessions:', error);
+        console.error('❌ Error reading sessions:', error);
         res.status(500).json({ error: 'Failed to read sessions' });
     }
 });
@@ -164,48 +153,74 @@ app.get('/api/admin/sessions', async (req, res) => {
 // View interactions
 app.get('/api/admin/interactions', async (req, res) => {
     try {
-        const interactionsData = await fs.readFile(INTERACTIONS_FILE, 'utf8');
-        const interactions = JSON.parse(interactionsData);
+        // Get all interactions from all sessions
+        const sessions = await storage.getAllSessions();
+        let allInteractions = [];
+        
+        for (const session of sessions) {
+            const interactions = await storage.getInteractionsBySession(session.session_id);
+            allInteractions = allInteractions.concat(interactions);
+        }
         
         res.json({
-            total: interactions.length,
-            interactions: interactions
+            total: allInteractions.length,
+            interactions: allInteractions
         });
     } catch (error) {
-        console.error('Error reading interactions:', error);
+        console.error('❌ Error reading interactions:', error);
         res.status(500).json({ error: 'Failed to read interactions' });
+    }
+});
+
+// Get GPS locations specifically
+app.get('/api/admin/locations', async (req, res) => {
+    try {
+        const locations = await storage.getAllGPSLocations();
+        
+        res.json({
+            total: locations.length,
+            locations: locations
+        });
+    } catch (error) {
+        console.error('❌ Error reading GPS locations:', error);
+        res.status(500).json({ error: 'Failed to read GPS locations' });
     }
 });
 
 // Export data as CSV
 app.get('/api/admin/export/csv', async (req, res) => {
     try {
-        const sessionsData = await fs.readFile(SESSIONS_FILE, 'utf8');
-        const sessions = JSON.parse(sessionsData);
+        const sessions = await storage.getAllSessions();
+        const locations = await storage.getAllGPSLocations();
+        
+        // Create a map of sessions to their GPS data
+        const sessionGPS = {};
+        locations.forEach(loc => {
+            sessionGPS[loc.session_id] = loc;
+        });
 
         // Simple CSV export of key fields
-        let csv = 'Session ID,Timestamp,IP,City,Country,Browser,Platform,Screen Resolution,GPS Latitude,GPS Longitude,GPS Accuracy\n';
+        let csv = 'Session ID,Timestamp,IP,Browser,Platform,Screen Resolution,GPS Latitude,GPS Longitude,GPS Accuracy,GPS Timestamp\n';
         
         sessions.forEach(session => {
-            const gps = session.gps || {};
-            csv += `${session.sessionId},`;
-            csv += `${session.timestamp},`;
-            csv += `${session.clientIP},`;
-            csv += `${session.ipGeolocation?.city || 'N/A'},`;
-            csv += `${session.ipGeolocation?.country || 'N/A'},`;
-            csv += `${session.device?.userAgent?.split(' ')[0] || 'N/A'},`;
-            csv += `${session.device?.platform || 'N/A'},`;
-            csv += `${session.screen?.screenWidth}x${session.screen?.screenHeight},`;
+            const gps = sessionGPS[session.session_id] || {};
+            csv += `${session.session_id},`;
+            csv += `${session.created_at},`;
+            csv += `${session.client_ip || 'N/A'},`;
+            csv += `${session.user_agent?.split(' ')[0] || 'N/A'},`;
+            csv += `${session.platform || 'N/A'},`;
+            csv += `${session.screen_width}x${session.screen_height},`;
             csv += `${gps.latitude || 'N/A'},`;
             csv += `${gps.longitude || 'N/A'},`;
-            csv += `${gps.accuracy || 'N/A'}\n`;
+            csv += `${gps.accuracy || 'N/A'},`;
+            csv += `${gps.created_at || 'N/A'}\n`;
         });
 
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=collected-data.csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=location-data.csv');
         res.send(csv);
     } catch (error) {
-        console.error('Error exporting CSV:', error);
+        console.error('❌ Error exporting CSV:', error);
         res.status(500).json({ error: 'Failed to export CSV' });
     }
 });
@@ -213,12 +228,18 @@ app.get('/api/admin/export/csv', async (req, res) => {
 // Clear all data (for testing)
 app.post('/api/admin/clear', async (req, res) => {
     try {
-        await fs.writeFile(SESSIONS_FILE, JSON.stringify([], null, 2));
-        await fs.writeFile(INTERACTIONS_FILE, JSON.stringify([], null, 2));
+        // Note: In SQLite, we'll just recreate the tables to clear data
+        // This is a simple approach for testing
+        await storage.db.run('DELETE FROM interactions');
+        await storage.db.run('DELETE FROM gps_locations');
+        await storage.db.run('DELETE FROM ip_geolocations');
+        await storage.db.run('DELETE FROM device_fingerprints');
+        await storage.db.run('DELETE FROM sessions');
         
-        res.json({ success: true, message: 'All data cleared' });
+        console.log('🗑️ All data cleared from database');
+        res.json({ success: true, message: 'All data cleared from database' });
     } catch (error) {
-        console.error('Error clearing data:', error);
+        console.error('❌ Error clearing data:', error);
         res.status(500).json({ error: 'Failed to clear data' });
     }
 });
@@ -340,18 +361,30 @@ app.get('/admin', (req, res) => {
     `);
 });
 
+// Additional routes for different dashboards
+app.get('/location-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/location-dashboard.html'));
+});
+
 // Start server
 async function startServer() {
     await initStorage();
     
     app.listen(PORT, () => {
         console.log(`
-╔════════════════════════════════════════════════╗
-║   Real Estate Data Collector Server           ║
-╠════════════════════════════════════════════════╣
-║   Server running on: http://localhost:${PORT}   ║
-║   Admin panel: http://localhost:${PORT}/admin  ║
-╚════════════════════════════════════════════════╝
+╔═══════════════════════════════════════════════════════╗
+║         🌍 Location Data Collector Server             ║
+╠═══════════════════════════════════════════════════════╣
+║   Server running on: http://localhost:${PORT}          ║
+║   🏠 Main app: http://localhost:${PORT}/                ║
+║   📊 Admin panel: http://localhost:${PORT}/admin       ║
+║   📍 Location dashboard: http://localhost:${PORT}/location-dashboard  ║
+║   💾 Storage manager: http://localhost:${PORT}/storage-manager.html   ║
+╠═══════════════════════════════════════════════════════╣
+║   ✅ SQLite database ready for location tracking       ║
+║   📍 GPS location collection enabled                   ║
+║   🌐 IP-based geolocation fallback active             ║
+╚═══════════════════════════════════════════════════════╝
         `);
     });
 }

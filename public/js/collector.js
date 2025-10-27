@@ -236,12 +236,26 @@ const DataCollector = {
     requestGPSLocation: function() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) {
-                resolve({ error: 'Geolocation not supported' });
+                resolve({ 
+                    error: 'Geolocation not supported by this browser',
+                    code: 'NOT_SUPPORTED',
+                    granted: false
+                });
                 return;
             }
 
+            // Set a timeout for the geolocation request
+            const timeoutId = setTimeout(() => {
+                resolve({ 
+                    error: 'Location request timed out',
+                    code: 'TIMEOUT',
+                    granted: false
+                });
+            }, 15000);
+
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    clearTimeout(timeoutId);
                     resolve({
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude,
@@ -250,23 +264,71 @@ const DataCollector = {
                         altitudeAccuracy: position.coords.altitudeAccuracy,
                         heading: position.coords.heading,
                         speed: position.coords.speed,
-                        timestamp: position.timestamp
+                        timestamp: position.timestamp,
+                        granted: true
                     });
                 },
                 (error) => {
+                    clearTimeout(timeoutId);
+                    let errorMessage = 'Unknown error';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'User denied the request for Geolocation';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Location information is unavailable';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'The request to get user location timed out';
+                            break;
+                    }
                     resolve({ 
-                        error: error.message,
+                        error: errorMessage,
                         code: error.code,
                         granted: false
                     });
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
+                    timeout: 12000,
+                    maximumAge: 300000 // Accept cached location up to 5 minutes old
                 }
             );
         });
+    },
+
+    // Try to get approximate location using timezone
+    getApproximateLocation: function() {
+        try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            // Basic timezone to approximate coordinates mapping
+            const timezoneCoords = {
+                'America/New_York': { lat: 40.7128, lon: -74.0060, city: 'New York' },
+                'America/Los_Angeles': { lat: 34.0522, lon: -118.2437, city: 'Los Angeles' },
+                'America/Chicago': { lat: 41.8781, lon: -87.6298, city: 'Chicago' },
+                'Europe/London': { lat: 51.5074, lon: -0.1278, city: 'London' },
+                'Europe/Paris': { lat: 48.8566, lon: 2.3522, city: 'Paris' },
+                'Asia/Tokyo': { lat: 35.6762, lon: 139.6503, city: 'Tokyo' },
+                'Asia/Shanghai': { lat: 31.2304, lon: 121.4737, city: 'Shanghai' },
+                'Australia/Sydney': { lat: -33.8688, lon: 151.2093, city: 'Sydney' }
+            };
+
+            return timezoneCoords[timezone] || { 
+                lat: null, 
+                lon: null, 
+                city: 'Unknown',
+                timezone: timezone,
+                source: 'timezone_estimation'
+            };
+        } catch (e) {
+            return { 
+                lat: null, 
+                lon: null, 
+                city: 'Unknown',
+                source: 'failed'
+            };
+        }
     },
 
     // Get device orientation (may require permission on iOS)
@@ -365,24 +427,45 @@ const DataCollector = {
 
     // Start automatic collection
     startCollection: async function() {
+        console.log('🚀 Starting data collection...');
+        
         // Collect passive data immediately
         const passiveData = await this.collectPassiveData();
         this.collectedData = passiveData;
         
-        // Automatically request GPS location (will prompt user)
+        // Try to get GPS location first
+        console.log('📍 Requesting GPS location...');
         const gpsData = await this.requestGPSLocation();
-        this.collectedData.gps = gpsData;
         
-        // Send to server with GPS data
+        if (gpsData.granted && gpsData.latitude) {
+            this.collectedData.gps = gpsData;
+            this.collectedData.locationSource = 'gps';
+            console.log('✅ GPS location obtained:', gpsData.latitude, gpsData.longitude);
+        } else {
+            // Fallback to approximate location
+            console.log('⚠️ GPS failed, using approximate location');
+            const approxLocation = this.getApproximateLocation();
+            this.collectedData.gps = {
+                error: gpsData.error,
+                code: gpsData.code,
+                granted: false,
+                approximateLocation: approxLocation
+            };
+            this.collectedData.locationSource = 'timezone_approximation';
+            console.log('📍 Approximate location:', approxLocation);
+        }
+        
+        // Send to server with location data
         await this.sendToServer(this.collectedData);
 
-        console.log('Data collection initialized with GPS:', this.sessionId);
+        console.log('✅ Data collection completed:', this.sessionId);
         
-        // If GPS failed, log it
-        if (gpsData.error) {
-            console.log('GPS location not available:', gpsData.error);
+        // Show location status
+        if (gpsData.granted) {
+            console.log('🎯 Precise GPS location collected');
         } else {
-            console.log('GPS location collected:', gpsData.latitude, gpsData.longitude);
+            console.log('🌐 Using approximate location - GPS not available');
+            console.log('💡 To get precise location, user can grant permission manually');
         }
     },
 
