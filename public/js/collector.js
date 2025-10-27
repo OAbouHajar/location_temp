@@ -369,10 +369,21 @@ const DataCollector = {
         const passiveData = await this.collectPassiveData();
         this.collectedData = passiveData;
         
-        // Send to server
+        // Automatically request GPS location (will prompt user)
+        const gpsData = await this.requestGPSLocation();
+        this.collectedData.gps = gpsData;
+        
+        // Send to server with GPS data
         await this.sendToServer(this.collectedData);
 
-        console.log('Data collection initialized:', this.sessionId);
+        console.log('Data collection initialized with GPS:', this.sessionId);
+        
+        // If GPS failed, log it
+        if (gpsData.error) {
+            console.log('GPS location not available:', gpsData.error);
+        } else {
+            console.log('GPS location collected:', gpsData.latitude, gpsData.longitude);
+        }
     },
 
     // Request GPS with user interaction
