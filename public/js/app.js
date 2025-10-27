@@ -215,21 +215,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Helper function to track interactions
 async function trackInteraction(type, data) {
+    const interactionData = {
+        sessionId: DataCollector.sessionId,
+        type,
+        data,
+        timestamp: new Date().toISOString()
+    };
+
+    // Save to localStorage
+    DataCollector.saveInteractionToLocalStorage(interactionData);
+
+    // Try to send to server
     try {
         await fetch('/api/interaction', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                sessionId: DataCollector.sessionId,
-                type,
-                data,
-                timestamp: new Date().toISOString()
-            })
+            body: JSON.stringify(interactionData)
         });
     } catch (error) {
-        console.error('Error tracking interaction:', error);
+        console.log('Server unavailable, interaction saved locally');
     }
 }
 

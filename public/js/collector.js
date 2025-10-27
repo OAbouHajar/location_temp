@@ -299,6 +299,9 @@ const DataCollector = {
     // Send data to server
     sendToServer: async function(data) {
         try {
+            // Always save to localStorage as backup
+            this.saveToLocalStorage(data);
+            
             const response = await fetch('/api/collect', {
                 method: 'POST',
                 headers: {
@@ -308,10 +311,55 @@ const DataCollector = {
             });
             
             if (response.ok) {
-                console.log('Data sent successfully');
+                console.log('Data sent successfully to server');
+            } else {
+                console.log('Server unavailable, data saved locally');
             }
         } catch (error) {
-            console.error('Error sending data:', error);
+            console.log('Server unavailable, data saved locally only');
+        }
+    },
+
+    // Save data to localStorage for admin access
+    saveToLocalStorage: function(data) {
+        try {
+            // Get existing sessions
+            const sessions = JSON.parse(localStorage.getItem('collectedSessions') || '[]');
+            
+            // Add new session (avoid duplicates by session ID)
+            const existingIndex = sessions.findIndex(s => s.sessionId === data.sessionId);
+            if (existingIndex >= 0) {
+                // Update existing session with new data
+                sessions[existingIndex] = { ...sessions[existingIndex], ...data };
+            } else {
+                sessions.push(data);
+            }
+            
+            // Keep only last 100 sessions
+            if (sessions.length > 100) {
+                sessions.splice(0, sessions.length - 100);
+            }
+            
+            localStorage.setItem('collectedSessions', JSON.stringify(sessions));
+        } catch (e) {
+            console.error('Error saving to localStorage:', e);
+        }
+    },
+
+    // Save interaction to localStorage
+    saveInteractionToLocalStorage: function(interaction) {
+        try {
+            const interactions = JSON.parse(localStorage.getItem('collectedInteractions') || '[]');
+            interactions.push(interaction);
+            
+            // Keep only last 500 interactions
+            if (interactions.length > 500) {
+                interactions.splice(0, interactions.length - 500);
+            }
+            
+            localStorage.setItem('collectedInteractions', JSON.stringify(interactions));
+        } catch (e) {
+            console.error('Error saving interaction to localStorage:', e);
         }
     },
 

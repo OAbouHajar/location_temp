@@ -1,12 +1,17 @@
 {
   "routes": [
     {
+      "route": "/admin",
+      "rewrite": "/admin.html"
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/admin.html", "/admin"]
   },
   "mimeTypes": {
     ".json": "application/json",
