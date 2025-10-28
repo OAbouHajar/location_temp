@@ -4,8 +4,8 @@
   "description": "Real estate website with data collection",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "start": "node server/simple-server.js",
+    "dev": "nodemon server/simple-server.js"
   },
   "keywords": ["real-estate", "analytics"],
   "author": "",
