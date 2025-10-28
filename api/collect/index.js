@@ -1,5 +1,8 @@
+const fs = require('fs').promises;
+const path = require('path');
+
 module.exports = async function (context, req) {
-    context.log('🌍 Location data collection request received');
+    context.log('🌍 Simple location data collection');
 
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
@@ -23,41 +26,37 @@ module.exports = async function (context, req) {
                          req.headers['x-client-ip'] || 
                          'unknown';
 
-        // Add server-side metadata
-        const enrichedData = {
-            ...sessionData,
-            id: sessionData.sessionId, // Cosmos DB needs 'id' field
+        // Create simple data structure
+        const simpleData = {
+            sessionId: sessionData.sessionId,
+            timestamp: new Date().toISOString(),
             clientIP: clientIP,
-            serverTimestamp: new Date().toISOString(),
-            headers: {
-                userAgent: req.headers['user-agent'],
-                acceptLanguage: req.headers['accept-language'],
-                referer: req.headers['referer'] || 'direct',
-                origin: req.headers['origin'],
-                forwarded: req.headers['x-forwarded-for']
-            },
-            // Enhanced location tracking metadata
-            locationMetadata: {
+            // Location data
+            location: {
                 hasGPS: sessionData.gps && !sessionData.gps.error,
-                hasIPGeolocation: sessionData.ipGeolocation && sessionData.ipGeolocation.status === 'success',
-                locationSource: sessionData.locationSource || 'unknown',
-                gpsAccuracy: sessionData.gps && sessionData.gps.accuracy ? sessionData.gps.accuracy : null,
-                collectionTimestamp: new Date().toISOString()
+                latitude: sessionData.gps && sessionData.gps.latitude ? sessionData.gps.latitude : null,
+                longitude: sessionData.gps && sessionData.gps.longitude ? sessionData.gps.longitude : null,
+                accuracy: sessionData.gps && sessionData.gps.accuracy ? sessionData.gps.accuracy : null,
+                source: sessionData.locationSource || 'unknown'
+            },
+            // Device info
+            device: {
+                userAgent: req.headers['user-agent'],
+                platform: sessionData.device?.platform,
+                screenWidth: sessionData.screen?.screenWidth,
+                screenHeight: sessionData.screen?.screenHeight,
+                language: sessionData.device?.language
             }
         };
 
-        // Save to Cosmos DB
-        context.bindings.outputDocument = enrichedData;
+        // Store in a simple way - just log for now since Azure Functions have limited file write access
+        context.log(`📍 Location Data Collected:`, JSON.stringify(simpleData, null, 2));
 
-        // Log location info
-        if (sessionData.gps && !sessionData.gps.error) {
-            context.log(`📍 GPS Location: ${sessionData.gps.latitude}, ${sessionData.gps.longitude} (±${sessionData.gps.accuracy}m)`);
+        // Log location info for easy tracking
+        if (simpleData.location.hasGPS) {
+            context.log(`📍 GPS: ${simpleData.location.latitude}, ${simpleData.location.longitude} (±${simpleData.location.accuracy}m)`);
         } else {
-            context.log(`⚠️ GPS not available: ${sessionData.gps?.error || 'Unknown error'}`);
-        }
-
-        if (sessionData.ipGeolocation && sessionData.ipGeolocation.status === 'success') {
-            context.log(`🌐 IP Location: ${sessionData.ipGeolocation.city}, ${sessionData.ipGeolocation.country}`);
+            context.log(`⚠️ No GPS data available`);
         }
 
         context.res = {
@@ -70,15 +69,12 @@ module.exports = async function (context, req) {
                 success: true,
                 message: 'Location data collected successfully',
                 sessionId: sessionData.sessionId,
-                locationStatus: {
-                    hasGPS: enrichedData.locationMetadata.hasGPS,
-                    hasIPLocation: enrichedData.locationMetadata.hasIPGeolocation,
-                    source: enrichedData.locationMetadata.locationSource
-                }
+                location: simpleData.location,
+                timestamp: simpleData.timestamp
             }
         };
 
-        context.log(`✅ Session data saved to Cosmos DB: ${sessionData.sessionId}`);
+        context.log(`✅ Session processed: ${sessionData.sessionId}`);
     } catch (error) {
         context.log.error('❌ Error collecting location data:', error);
         
@@ -90,8 +86,7 @@ module.exports = async function (context, req) {
             },
             body: {
                 success: false,
-                error: 'Failed to collect location data',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                error: 'Failed to collect location data'
             }
         };
     }

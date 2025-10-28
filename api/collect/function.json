@@ -12,15 +12,6 @@
       "type": "http",
       "direction": "out",
       "name": "res"
-    },
-    {
-      "type": "cosmosDB",
-      "direction": "out",
-      "name": "outputDocument",
-      "databaseName": "LocationTracker",
-      "collectionName": "Sessions",
-      "createIfNotExists": true,
-      "connectionStringSetting": "CosmosDbConnectionString"
     }
   ]
 }

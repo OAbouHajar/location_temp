@@ -12,15 +12,6 @@
       "type": "http",
       "direction": "out",
       "name": "res"
-    },
-    {
-      "type": "cosmosDB",
-      "direction": "in",
-      "name": "inputDocuments",
-      "databaseName": "LocationTracker",
-      "collectionName": "Sessions",
-      "connectionStringSetting": "CosmosDbConnectionString",
-      "sqlQuery": "SELECT * FROM c ORDER BY c.serverTimestamp DESC"
     }
   ]
 }
