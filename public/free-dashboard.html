@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📍 Free Location Tracker Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+
+        .free-badge {
+            background: #2ecc71;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .card-content {
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .location-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .location-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .location-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .session-id {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+
+        .coordinates {
+            color: #27ae60;
+            font-family: monospace;
+            background: #ecf0f1;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin: 5px 0;
+        }
+
+        .accuracy {
+            color: #f39c12;
+            font-size: 0.8rem;
+        }
+
+        .location-source {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .gps {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .free {
+            background: #3498db;
+            color: white;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #0078d4;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .success {
+            background: #2ecc71;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📍 Free Location Tracker</h1>
+            <p class="subtitle">Client-side location tracking - No server required!</p>
+            <div class="free-badge">✨ 100% Free Solution</div>
+        </div>
+
+        <div class="info-box">
+            <strong>🎉 Perfect for Free Azure Static Web Apps!</strong><br>
+            This solution stores data in your browser's localStorage - no backend needed. All location data is kept locally and works instantly.
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSessions">0</div>
+                <div class="stat-label">Total Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="gpsLocations">0</div>
+                <div class="stat-label">GPS Locations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="successRate">0%</div>
+                <div class="stat-label">GPS Success Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="lastUpdate">Never</div>
+                <div class="stat-label">Last Update</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="refreshData()">🔄 Refresh Data</button>
+            <button onclick="collectLocation()">📍 Test GPS</button>
+            <button onclick="exportData()">📊 Export CSV</button>
+            <button onclick="clearData()">🗑️ Clear Data</button>
+            <button onclick="viewOnMap()">🗺️ View on Map</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📍 Collected GPS Locations</div>
+            <div class="card-content" id="locationsList">
+                <div class="loading">Click "Test GPS" to start collecting location data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Client-side location tracking
+        let allSessions = [];
+
+        // Load data on page load
+        window.addEventListener('load', function() {
+            refreshData();
+        });
+
+        function refreshData() {
+            // Load data from localStorage
+            const storedSessions = localStorage.getItem('locationSessions');
+            if (storedSessions) {
+                allSessions = JSON.parse(storedSessions);
+            }
+
+            updateStats();
+            displayLocations();
+        }
+
+        function updateStats() {
+            const gpsLocations = allSessions.filter(s => s.location && s.location.hasGPS);
+            const successRate = allSessions.length > 0 ? 
+                ((gpsLocations.length / allSessions.length) * 100).toFixed(1) : 0;
+            
+            document.getElementById('totalSessions').textContent = allSessions.length;
+            document.getElementById('gpsLocations').textContent = gpsLocations.length;
+            document.getElementById('successRate').textContent = successRate + '%';
+            
+            const lastUpdate = allSessions.length > 0 ? 
+                new Date(allSessions[allSessions.length - 1].timestamp).toLocaleTimeString() : 'Never';
+            document.getElementById('lastUpdate').textContent = lastUpdate;
+        }
+
+        function displayLocations() {
+            const container = document.getElementById('locationsList');
+            
+            if (allSessions.length === 0) {
+                container.innerHTML = '<div class="loading">No location data yet. Click "Test GPS" to start collecting!</div>';
+                return;
+            }
+
+            let html = '';
+            allSessions.slice(-10).reverse().forEach(session => { // Show latest 10
+                if (session.location && session.location.hasGPS) {
+                    html += `
+                        <div class="location-item">
+                            <div class="location-header">
+                                <span class="session-id">${session.sessionId}</span>
+                                <span class="timestamp">${new Date(session.timestamp).toLocaleString()}</span>
+                            </div>
+                            <div class="coordinates">📍 ${session.location.latitude.toFixed(6)}, ${session.location.longitude.toFixed(6)}</div>
+                            <div class="accuracy">Accuracy: ±${session.location.accuracy}m</div>
+                            <div style="margin-top: 8px;">
+                                <span class="location-source free">Local Storage</span>
+                                <span class="location-source gps">GPS</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="location-item" style="opacity: 0.7;">
+                            <div class="location-header">
+                                <span class="session-id">${session.sessionId}</span>
+                                <span class="timestamp">${new Date(session.timestamp).toLocaleString()}</span>
+                            </div>
+                            <div style="color: #e74c3c;">❌ GPS not available</div>
+                        </div>
+                    `;
+                }
+            });
+
+            container.innerHTML = html || '<div class="loading">No sessions found</div>';
+        }
+
+        function collectLocation() {
+            if (!navigator.geolocation) {
+                showMessage('❌ Geolocation not supported by this browser', 'error');
+                return;
+            }
+
+            showMessage('📍 Requesting GPS location...', 'info');
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const sessionData = {
+                        sessionId: 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        timestamp: new Date().toISOString(),
+                        location: {
+                            hasGPS: true,
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            source: 'gps'
+                        },
+                        device: {
+                            userAgent: navigator.userAgent,
+                            platform: navigator.platform,
+                            language: navigator.language
+                        }
+                    };
+
+                    // Store in localStorage
+                    allSessions.push(sessionData);
+                    localStorage.setItem('locationSessions', JSON.stringify(allSessions));
+
+                    showMessage(`✅ GPS location collected: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`, 'success');
+                    refreshData();
+                },
+                (error) => {
+                    const sessionData = {
+                        sessionId: 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        timestamp: new Date().toISOString(),
+                        location: {
+                            hasGPS: false,
+                            error: error.message,
+                            source: 'failed'
+                        }
+                    };
+
+                    allSessions.push(sessionData);
+                    localStorage.setItem('locationSessions', JSON.stringify(allSessions));
+
+                    showMessage(`⚠️ GPS failed: ${error.message}`, 'error');
+                    refreshData();
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        }
+
+        function exportData() {
+            if (allSessions.length === 0) {
+                showMessage('No data to export', 'error');
+                return;
+            }
+
+            // Create CSV
+            let csv = 'Session ID,Timestamp,Has GPS,Latitude,Longitude,Accuracy,Platform,User Agent\n';
+            
+            allSessions.forEach(session => {
+                csv += `${session.sessionId},`;
+                csv += `${session.timestamp},`;
+                csv += `${session.location.hasGPS},`;
+                csv += `${session.location.latitude || 'N/A'},`;
+                csv += `${session.location.longitude || 'N/A'},`;
+                csv += `${session.location.accuracy || 'N/A'},`;
+                csv += `${session.device?.platform || 'N/A'},`;
+                csv += `"${(session.device?.userAgent || 'N/A').replace(/"/g, '""')}"\n`;
+            });
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `location-data-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showMessage('✅ CSV exported successfully', 'success');
+        }
+
+        function clearData() {
+            if (confirm('Are you sure you want to clear all location data?')) {
+                allSessions = [];
+                localStorage.removeItem('locationSessions');
+                refreshData();
+                showMessage('🗑️ All data cleared', 'success');
+            }
+        }
+
+        function viewOnMap() {
+            const gpsLocations = allSessions.filter(s => s.location && s.location.hasGPS);
+            
+            if (gpsLocations.length === 0) {
+                showMessage('No GPS locations to show on map', 'error');
+                return;
+            }
+
+            const latest = gpsLocations[gpsLocations.length - 1];
+            const googleMapsUrl = `https://www.google.com/maps?q=${latest.location.latitude},${latest.location.longitude}`;
+            
+            if (confirm(`Open latest location (${latest.location.latitude.toFixed(4)}, ${latest.location.longitude.toFixed(4)}) in Google Maps?`)) {
+                window.open(googleMapsUrl, '_blank');
+            }
+        }
+
+        function showMessage(message, type = 'info') {
+            const existingMessage = document.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type === 'error' ? 'error' : type === 'success' ? 'success' : 'info-box'}`;
+            messageDiv.textContent = message;
+            messageDiv.style.position = 'fixed';
+            messageDiv.style.top = '20px';
+            messageDiv.style.right = '20px';
+            messageDiv.style.zIndex = '1000';
+            messageDiv.style.maxWidth = '400px';
+            
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Auto-collect location when someone visits the main page
+        if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+            setTimeout(() => {
+                if (allSessions.length === 0) {
+                    collectLocation();
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

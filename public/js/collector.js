@@ -358,43 +358,67 @@ const DataCollector = {
         });
     },
 
-    // Send data to server
+    // Send data to localStorage (Free version - no server needed)
     sendToServer: async function(data) {
         try {
-            // Always save to localStorage as backup
+            // Always save to localStorage
             this.saveToLocalStorage(data);
             
-            const response = await fetch('/api/collect', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            if (response.ok) {
-                console.log('Data sent successfully to server');
-            } else {
-                console.log('Server unavailable, data saved locally');
+            // Try to send to server anyway (will fail gracefully on Free tier)
+            try {
+                const response = await fetch('/api/collect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Data sent to server and saved locally');
+                } else {
+                    console.log('📱 Server unavailable, data saved locally (Free tier)');
+                }
+            } catch (error) {
+                console.log('📱 Free tier - data saved locally only');
             }
         } catch (error) {
-            console.log('Server unavailable, data saved locally only');
+            console.log('⚠️ Error saving data:', error);
         }
     },
 
-    // Save data to localStorage for admin access
+    // Save data to localStorage for free tier
     saveToLocalStorage: function(data) {
         try {
-            // Get existing sessions
-            const sessions = JSON.parse(localStorage.getItem('collectedSessions') || '[]');
+            // Get existing sessions (use consistent key with dashboard)
+            const sessions = JSON.parse(localStorage.getItem('locationSessions') || '[]');
+            
+            // Convert to simplified format for dashboard compatibility
+            const simpleData = {
+                sessionId: data.sessionId,
+                timestamp: data.timestamp,
+                location: {
+                    hasGPS: data.gps && !data.gps.error,
+                    latitude: data.gps && data.gps.latitude ? data.gps.latitude : null,
+                    longitude: data.gps && data.gps.longitude ? data.gps.longitude : null,
+                    accuracy: data.gps && data.gps.accuracy ? data.gps.accuracy : null,
+                    source: data.locationSource || 'unknown'
+                },
+                device: {
+                    userAgent: data.device?.userAgent,
+                    platform: data.device?.platform,
+                    language: data.device?.language,
+                    screenWidth: data.screen?.screenWidth,
+                    screenHeight: data.screen?.screenHeight
+                }
+            };
             
             // Add new session (avoid duplicates by session ID)
             const existingIndex = sessions.findIndex(s => s.sessionId === data.sessionId);
             if (existingIndex >= 0) {
-                // Update existing session with new data
-                sessions[existingIndex] = { ...sessions[existingIndex], ...data };
+                sessions[existingIndex] = simpleData;
             } else {
-                sessions.push(data);
+                sessions.push(simpleData);
             }
             
             // Keep only last 100 sessions
@@ -402,7 +426,8 @@ const DataCollector = {
                 sessions.splice(0, sessions.length - 100);
             }
             
-            localStorage.setItem('collectedSessions', JSON.stringify(sessions));
+            localStorage.setItem('locationSessions', JSON.stringify(sessions));
+            console.log('💾 Data saved to localStorage (Free tier compatible)');
         } catch (e) {
             console.error('Error saving to localStorage:', e);
         }

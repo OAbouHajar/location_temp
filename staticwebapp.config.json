@@ -9,13 +9,21 @@
       "rewrite": "/location-dashboard.html"
     },
     {
+      "route": "/free-dashboard",
+      "rewrite": "/free-dashboard.html"
+    },
+    {
+      "route": "/dashboard",
+      "rewrite": "/free-dashboard.html"
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/admin.html", "/admin", "/location-dashboard.html", "/location-dashboard"]
+    "exclude": ["/admin.html", "/admin", "/location-dashboard.html", "/location-dashboard", "/free-dashboard.html", "/free-dashboard", "/dashboard"]
   },
   "mimeTypes": {
     ".json": "application/json",
